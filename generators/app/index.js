@@ -94,7 +94,7 @@ module.exports = Generator.extend({
             var path = this.modulePath;
 
             if(!this.components.length){
-                this.log.error(this.errors.NO_COMPONENTS);
+                console.log(chalk.red(this.errors.NO_COMPONENTS));
                 process.exit(1);
                 return;
             }
