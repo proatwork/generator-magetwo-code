@@ -1,0 +1,23 @@
+{
+  "name": "nwt/livly-megamenu-addon",
+  "version" : "1.0.0",
+  "description": "Livly Megamenu Addon",
+  "require": {
+    "php": "~5.6.5|7.0.2|7.0.4|~7.0.6",
+    "magento/module-cms": "~101.0.3",
+    "magento/module-widget": "~100.1.1",
+    "claudiu/ves-megamenu" : "*"
+  },
+  "type": "magento2-module",
+  "license": [
+    "proprietary"
+  ],
+  "autoload": {
+    "files": [
+      "registration.php"
+    ],
+    "psr-4": {
+      "NWT\\MegamenuAddon\\": ""
+    }
+  }
+}
