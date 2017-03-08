@@ -13,18 +13,15 @@ module.exports = Generator.extend({
         NO_FRONTEND_WEB_SELECTED : "You forgot to add frontend web! Continuing anyway..."
     },
     prompting: function () {
+
+        var done = this.async();
         // Have Yeoman greet the user.
+        this.author = this.user.git.name() || "Yeoman";
+        this.git_remote = shell.exec("git config --get remote.origin.url", {silent : true}).stdout.replace(/(\r\n|\n|\r)/gm,"") || false;
+
         this.log(yosay(
             'Welcome to the rad ' + chalk.red('generator-magetwo-code') + ' generator!'
         ));
-        var done = this.async();
-        this.author = {
-            name: this.user.git.name(),
-            email: this.user.git.email()
-        };
-        var git_remote = shell.exec("git config --get remote.origin.url", {silent : true}).stdout;
-        this.git_remote = git_remote ? git_remote.replace(/(\r\n|\n|\r)/gm,"") : false;
-
         var prompts = [
             {
                 type: 'input',
@@ -71,12 +68,12 @@ module.exports = Generator.extend({
 				message: 'Module Short Description:',
 				default: "Generated with Yeoman" + (this.author.name ? "by : " + this.author.name : "")
 			},
-			{
-				type: 'input',
-				name: 'remote',
-				message: 'Git remote for this project (used to generate the README.md):',
-				default: this.git_remote
-			}
+            {
+                type: 'input',
+                name: 'author',
+                message: 'Author:',
+                default: this.author
+            }
         ];
 
         return this.prompt(prompts).then(function (props) {
@@ -88,9 +85,7 @@ module.exports = Generator.extend({
             this.module = _s.classify(props.module);
             this.remote = props.remote;
 
-			var git_branch = shell.exec("git rev-parse --abbrev-ref HEAD", {silent : true}).stdout;
-			this.git_branch = git_branch ? git_branch.replace(/(\r\n|\n|\r)/gm,"") : false;
-
+			this.git_branch = shell.exec("git rev-parse --abbrev-ref HEAD", {silent : true}).stdout.replace(/(\r\n|\n|\r)/gm,"") || false;
 
             function hasComponent(component) {
                 return components && components.indexOf(component) !== -1;
@@ -129,26 +124,68 @@ module.exports = Generator.extend({
 				return dis.fs.read(dis.destinationPath(path + 'fileHeader.txt'));
 			}
             mkdirp(path);
+
 			/** fileHeader.php **/
             buildTpl("fileHeader.txt",{
                 author : this.author,
                 packageName : this.moduleClassName,
                 description : this.description
             });
+
             /** registration.php **/
             mkdirp(path + "etc/");
                 buildTpl('registration.php',{
-                    license : getFileHeader(),
+                    header : getFileHeader(),
                     className : this.moduleClassName
                 });
-            this.hasBlock ? mkdirp(path + "Block/") : '';
-            this.hasSetup ? mkdirp(path + "Setup/") : '';
+
+            /** make block **/
+            if(this.hasBlock){
+                mkdirp(path + "Block");
+                var blockClass = "Custom";
+                dis.fs.copyTpl(
+                    dis.templatePath("Block/Block.php"),
+                    dis.destinationPath(path + "Block/"+blockClass+".php"),
+                    {
+                        header : getFileHeader(),
+                        blockClass : blockClass,
+                        namespace : this.phpNamespace
+                    }
+                );
+            }
+
+            /** make setup **/
+            if(this.hasSetup){
+                mkdirp(path + "Setup");
+                var files = ["InstallSchema.php","UpgradeSchema.php"];
+                var dis = this;
+                files.forEach(function(filename){
+                    buildTpl('Setup/' + filename,{
+                        header : getFileHeader(),
+                        namespace : dis.phpNamespace
+                    });
+                });
+            }
+
+            /** make frontend/layout and frontend/templates **/
             if(this.hasFrontendView){
+                var dis = this;
                 var folders = ['layout','templates'];
                 folders.forEach(function(folder) {
                     mkdirp(path + "view/frontend/" + folder);
                 });
+
+                var layoutFiles = ['default.xml','default_head_blocks.xml'];
+                layoutFiles.forEach(function(layoutFile){
+                    buildTpl("view/frontend/" + folders[0] + '/' + layoutFile,{
+                        header : getFileHeader(),
+                        lcModule : dis.module.toLowerCase()
+                    });
+                });
+
             };
+
+            /** make web folder **/
             if(this.hasFrontendViewWeb){
                 if(!this.hasFrontendView) console.log(chalk.yellow(this.errors.NO_FRONTEND_SELECTED));
                 var folders = ['web'];
@@ -156,7 +193,7 @@ module.exports = Generator.extend({
                     mkdirp(path + "view/frontend/" + folder);
                 });
             }
-			/** composer.json**/
+			/** composer.json + README.md **/
             if(this.hasComposer){
                 if(!this.hasFrontendView) console.log(chalk.yellow(this.errors.NO_FRONTEND_SELECTED));
                 if(!this.hasFrontendViewWeb) console.log(chalk.yellow(this.errors.NO_FRONTEND_WEB_SELECTED));
@@ -166,7 +203,7 @@ module.exports = Generator.extend({
 					lcVendor : this.vendor.toLowerCase(),
 					lcModule : this.module.toLowerCase(),
 					description : this.description
-				});
+				}); 
 				if(this.remote){
 					buildTpl('README.md',{
 					    gitBranch : this.git_branch,

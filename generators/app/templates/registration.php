@@ -1,5 +1,5 @@
 <?php
-<%- license %>
+<%- header %>
 ?>
 <?php
 use \Magento\Framework\Component\ComponentRegistrar;
