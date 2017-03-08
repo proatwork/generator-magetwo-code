@@ -3,6 +3,7 @@ var Generator = require('yeoman-generator');
 var chalk = require('chalk');
 var yosay = require('yosay');
 var mkdirp = require('mkdirp');
+var shell = require('shelljs');
 var _s = require('underscore.string');
 
 module.exports = Generator.extend({
@@ -21,6 +22,8 @@ module.exports = Generator.extend({
             name: this.user.git.name(),
             email: this.user.git.email()
         };
+        var git_remote = shell.exec("git config --get remote.origin.url", {silent : true}).stdout;
+        this.git_remote = git_remote ? git_remote.replace(/(\r\n|\n|\r)/gm,"") : false;
 
         var prompts = [
             {
@@ -62,12 +65,18 @@ module.exports = Generator.extend({
                     }
                 ]
             },
-            {
-                type: 'input',
-                name: 'description',
-                message: 'Module Short Description:',
-                default: "Generated with Yeoman by : " + this.author.name
-            }
+			{
+				type: 'input',
+				name: 'description',
+				message: 'Module Short Description:',
+				default: "Generated with Yeoman" + (this.author.name ? "by : " + this.author.name : "")
+			},
+			{
+				type: 'input',
+				name: 'remote',
+				message: 'Git remote for this project (used to generate the README.md):',
+				default: this.git_remote
+			}
         ];
 
         return this.prompt(prompts).then(function (props) {
@@ -77,6 +86,11 @@ module.exports = Generator.extend({
 
             this.vendor = _s.classify(props.vendor);
             this.module = _s.classify(props.module);
+            this.remote = props.remote;
+
+			var git_branch = shell.exec("git rev-parse --abbrev-ref HEAD", {silent : true}).stdout;
+			this.git_branch = git_branch ? git_branch.replace(/(\r\n|\n|\r)/gm,"") : false;
+
 
             function hasComponent(component) {
                 return components && components.indexOf(component) !== -1;
@@ -87,19 +101,18 @@ module.exports = Generator.extend({
             this.hasFrontendView = hasComponent('frontendView');
             this.hasFrontendViewWeb = hasComponent('frontendViewWeb');
             this.hasComposer = hasComponent('composerReady');
-            this.phpNamespace = this.vendor + "\\" + this.module; /*        NWT_Custom */
+            this.phpNamespace = this.vendor + "\\" + this.module; /*        NWT\Custom */
             this.modulePath = this.vendor + "/" + this.module + "/"; /*     NWT/Custom/ <-- trailing slash  */
             this.moduleClassName = this.vendor + "_" + this.module;
+
             done();
 
         }.bind(this));
     },
-
     writing: {
         structure : function(){
             var dis = this;
             var path = this.modulePath;
-
             if(!this.components.length){
                 console.log(chalk.red(this.errors.NO_COMPONENTS));
                 process.exit(1);
@@ -112,18 +125,20 @@ module.exports = Generator.extend({
                     parameters
                 );
             }
-            function getLicenseContent(){
-                return dis.fs.read(dis.destinationPath(path + 'fileHeader.txt'));
-            }
+			function getFileHeader(){
+				return dis.fs.read(dis.destinationPath(path + 'fileHeader.txt'));
+			}
             mkdirp(path);
+			/** fileHeader.php **/
             buildTpl("fileHeader.txt",{
                 author : this.author,
                 packageName : this.moduleClassName,
                 description : this.description
             });
+            /** registration.php **/
             mkdirp(path + "etc/");
                 buildTpl('registration.php',{
-                    license : getLicenseContent(),
+                    license : getFileHeader(),
                     className : this.moduleClassName
                 });
             this.hasBlock ? mkdirp(path + "Block/") : '';
@@ -141,24 +156,30 @@ module.exports = Generator.extend({
                     mkdirp(path + "view/frontend/" + folder);
                 });
             }
+			/** composer.json**/
             if(this.hasComposer){
                 if(!this.hasFrontendView) console.log(chalk.yellow(this.errors.NO_FRONTEND_SELECTED));
                 if(!this.hasFrontendViewWeb) console.log(chalk.yellow(this.errors.NO_FRONTEND_WEB_SELECTED));
-                buildTpl('composer.json',{
-                    vendor : this.vendor,
-                    module : this.module,
-                    lcVendor : this.vendor.toLowerCase(),
-                    lcModule : this.module.toLowerCase(),
-                    description : this.description
-                });
+				buildTpl('composer.json',{
+					vendor : this.vendor,
+					module : this.module,
+					lcVendor : this.vendor.toLowerCase(),
+					lcModule : this.module.toLowerCase(),
+					description : this.description
+				});
+				if(this.remote){
+					buildTpl('README.md',{
+					    gitBranch : this.git_branch,
+						gitRemote : this.remote,
+						modulePath : this.modulePath,
+						lcVendor : this.vendor.toLowerCase(),
+						lcModule : this.module.toLowerCase()
+					});
+                }
             }
+
+            /** delete fileHeader **/
             this.fs.delete(dis.destinationPath(path + 'fileHeader.txt'));
-        },
-        registration : function(){
-
-        },
-        files: function () {
-
         }
     },
 
