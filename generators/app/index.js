@@ -61,12 +61,19 @@ module.exports = Generator.extend({
                         value: "composerReady"
                     }
                 ]
+            },
+            {
+                type: 'input',
+                name: 'description',
+                message: 'Module Short Description:',
+                default: "Generated with Yeoman by : " + this.author.name
             }
         ];
 
         return this.prompt(prompts).then(function (props) {
             var components = props.components;
             this.components = props.components;
+            this.description = props.description;
 
             this.vendor = _s.classify(props.vendor);
             this.module = _s.classify(props.module);
@@ -105,9 +112,18 @@ module.exports = Generator.extend({
                     parameters
                 );
             }
+            function getLicenseContent(){
+                return dis.fs.read(dis.destinationPath(path + 'fileHeader.txt'));
+            }
             mkdirp(path);
+            buildTpl("fileHeader.txt",{
+                author : this.author,
+                packageName : this.moduleClassName,
+                description : this.description
+            });
             mkdirp(path + "etc/");
                 buildTpl('registration.php',{
+                    license : getLicenseContent(),
                     className : this.moduleClassName
                 });
             this.hasBlock ? mkdirp(path + "Block/") : '';
@@ -128,7 +144,15 @@ module.exports = Generator.extend({
             if(this.hasComposer){
                 if(!this.hasFrontendView) console.log(chalk.yellow(this.errors.NO_FRONTEND_SELECTED));
                 if(!this.hasFrontendViewWeb) console.log(chalk.yellow(this.errors.NO_FRONTEND_WEB_SELECTED));
+                buildTpl('composer.json',{
+                    vendor : this.vendor,
+                    module : this.module,
+                    lcVendor : this.vendor.toLowerCase(),
+                    lcModule : this.module.toLowerCase(),
+                    description : this.description
+                });
             }
+            this.fs.delete(dis.destinationPath(path + 'fileHeader.txt'));
         },
         registration : function(){
 

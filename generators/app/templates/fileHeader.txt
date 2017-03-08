@@ -1,0 +1,5 @@
+/**
+ * @package    <%= packageName %>
+ <% if (author) { %>* @author <%= author.name %> <<%= author.email %>><% } %>
+ * @description <%= description %>
+ */
