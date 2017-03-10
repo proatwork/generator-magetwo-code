@@ -1,4 +1,6 @@
 # generator-magetwo-code [![NPM version][npm-image]][npm-url] [![Build Status][travis-image]][travis-url] [![Dependency Status][daviddm-image]][daviddm-url]
+## What it does
+This generator creates a simple simple barebone Magento2 module.
 
 ## Installation
 
@@ -19,6 +21,11 @@ or simply write
 yo
 ```
 and select `Magetwo Code`
+
+## TODO
+* Add widget support
+* Add support for system config menus
+
 
 ## Getting To Know Yeoman
 
