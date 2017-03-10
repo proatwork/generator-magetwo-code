@@ -37,7 +37,7 @@ and select `Magetwo Code`
 
 ## License
 
-Apache-2.0 © [Alexandru (proatwork) Bangala](github.com/proatwork)
+Apache-2.0 © [Alexandru (proatwork) Bangala](https://github.com/proatwork)
 
 
 [npm-image]: https://badge.fury.io/js/generator-magetwo-code.svg
