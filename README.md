@@ -1,5 +1,4 @@
 # generator-magetwo-code [![NPM version][npm-image]][npm-url] [![Build Status][travis-image]][travis-url] [![Dependency Status][daviddm-image]][daviddm-url]
-> Magento2
 
 ## Installation
 
@@ -15,6 +14,11 @@ Then generate your new project:
 ```bash
 yo magetwo-code
 ```
+or simply write
+```bash
+yo
+```
+and select `Magetwo Code`
 
 ## Getting To Know Yeoman
 

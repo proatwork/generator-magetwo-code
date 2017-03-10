@@ -1,7 +1,7 @@
 {
   "name": "generator-magetwo-code",
-  "version": "0.0.0",
-  "description": "Magento2",
+  "version": "1.0.0",
+  "description": "Magento2 lightweight module skeleton creator",
   "homepage": "",
   "author": {
     "name": "Alexandru (proatwork) Bangala",
