@@ -9,12 +9,12 @@ class UpgradeSchema implements UpgradeSchemaInterface
 {
     public function upgrade(SchemaSetupInterface $setup, ModuleContextInterface $context)
     {
-        $installer = $setup;
-        $installer->startSetup();
+//        $installer = $setup;
+//        $installer->startSetup();
  //       if (version_compare($context->getVersion(), '1.0.1') < 0) {
  //           $eav_attrib = $installer->getTable('eav_attribute');
  //           $installer->run("UPDATE {$eav_attrib} SET is_required = 1 WHERE attribute_code = 'company';");
  //       }
-        $installer->endSetup();
+//        $installer->endSetup();
     }
 }

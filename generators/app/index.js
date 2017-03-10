@@ -49,12 +49,8 @@ module.exports = Generator.extend({
                         value: "setup"
                     },
                     {
-                        name: "Frontend Views",
+                        name: "Frontend (XML + PHTML + JS + SCSS + require.js)",
                         value: "frontendView"
-                    },
-                    {
-                        name: "Frontend Web (js+scss/css+require.js)",
-                        value: "frontendViewWeb"
                     },
                     {
                         name: "composer.json + README.md",
@@ -73,6 +69,12 @@ module.exports = Generator.extend({
                 name: 'author',
                 message: 'Author:',
                 default: this.author
+            },
+            {
+                type: 'input',
+                name: 'remote',
+                message: 'Git remote:',
+                default: this.git_remote
             }
         ];
 
@@ -94,11 +96,11 @@ module.exports = Generator.extend({
             this.hasBlock = hasComponent('block');
             this.hasSetup = hasComponent('setup');
             this.hasFrontendView = hasComponent('frontendView');
-            this.hasFrontendViewWeb = hasComponent('frontendViewWeb');
             this.hasComposer = hasComponent('composerReady');
             this.phpNamespace = this.vendor + "\\" + this.module; /*        NWT\Custom */
             this.modulePath = this.vendor + "/" + this.module + "/"; /*     NWT/Custom/ <-- trailing slash  */
-            this.moduleClassName = this.vendor + "_" + this.module;
+            this.moduleClassName = this.vendor + "_" + this.module; /* NWT_Custom */
+            this.defaultBlockName = "MyBlock";
 
             done();
 
@@ -132,71 +134,144 @@ module.exports = Generator.extend({
                 description : this.description
             });
 
-            /** registration.php **/
+            /** make registration.php **/
             mkdirp(path + "etc/");
-                buildTpl('registration.php',{
+            buildTpl('registration.php',{
+                header : getFileHeader(),
+                className : dis.moduleClassName
+            });
+
+            /** make helper **/
+            function makeHelper(){
+                buildTpl('Helper/Data.php',{
                     header : getFileHeader(),
-                    className : this.moduleClassName
+                    phpNamespace : dis.phpNamespace
                 });
+            }
+            makeHelper();
+
+            function makeEtc(){
+                var xmls = ['di.xml','module.xml'];
+                xmls.forEach(function(xml){
+                    buildTpl('etc/' + xml,{
+                        moduleClassName : dis.moduleClassName,
+                        phpNamespace : dis.phpNamespace
+                    });
+                });
+            }
+            makeEtc();
 
             /** make block **/
             if(this.hasBlock){
                 mkdirp(path + "Block");
-                var blockClass = "Custom";
-                dis.fs.copyTpl(
-                    dis.templatePath("Block/Block.php"),
-                    dis.destinationPath(path + "Block/"+blockClass+".php"),
-                    {
-                        header : getFileHeader(),
-                        blockClass : blockClass,
-                        namespace : this.phpNamespace
-                    }
-                );
+                function makeBlock(){
+                    dis.fs.copyTpl(
+                        dis.templatePath("Block/Block.php"),
+                        dis.destinationPath(path + "Block/"+ dis.defaultBlockName +".php"),
+                        {
+                            header : getFileHeader(),
+                            blockClass : dis.defaultBlockName,
+                            namespace : dis.phpNamespace
+                        }
+                    );
+                }
+                makeBlock();
             }
 
             /** make setup **/
             if(this.hasSetup){
                 mkdirp(path + "Setup");
-                var files = ["InstallSchema.php","UpgradeSchema.php"];
-                var dis = this;
-                files.forEach(function(filename){
-                    buildTpl('Setup/' + filename,{
-                        header : getFileHeader(),
-                        namespace : dis.phpNamespace
+                function makeSetup(){
+                    var files = ["InstallSchema.php","UpgradeSchema.php"];
+                    files.forEach(function(filename){
+                        buildTpl('Setup/' + filename,{
+                            header : getFileHeader(),
+                            namespace : dis.phpNamespace
+                        });
                     });
-                });
+                }
+                makeSetup();
             }
 
             /** make frontend/layout and frontend/templates **/
             if(this.hasFrontendView){
                 var dis = this;
-                var folders = ['layout','templates'];
-                folders.forEach(function(folder) {
-                    mkdirp(path + "view/frontend/" + folder);
+                var frontendDir = "view/frontend/";
+                var folders = [
+                    'layout',
+                    'templates',
+                    'web/css',
+                    'web/js',
+                ];
+                folders.forEach(function(folder){
+                    mkdirp(path + frontendDir + folder);
                 });
-
-                var layoutFiles = ['default.xml','default_head_blocks.xml'];
-                layoutFiles.forEach(function(layoutFile){
-                    buildTpl("view/frontend/" + folders[0] + '/' + layoutFile,{
-                        header : getFileHeader(),
-                        lcModule : dis.module.toLowerCase()
+                function makeLayouts(){
+                    var layouts = ['default.xml', 'default_head_blocks.xml'];
+                    var layoutsFolder = frontendDir + "layout/";
+                    layouts.forEach(function(layout){
+                        buildTpl(layoutsFolder + layout,{
+                            header : getFileHeader(),
+                            lcModule : dis.module.toLowerCase(),
+                            custom : dis.defaultBlockName.toLowerCase(),
+                            module : dis.module.toLowerCase(),
+                            moduleClassName : dis.moduleClassName,
+                            phpNamespace : dis.phpNamespace,
+                            blockName : dis.defaultBlockName
+                        });
                     });
-                });
+                }
+                function makeTemplates(){
+                    var templates = [
+                        ['_scripts.phtml', false],
+                        ['custom.phtml', dis.defaultBlockName.toLowerCase()  + ".phtml"]
+                    ];
+                    var templatesFolder = frontendDir + "templates/";
+                    templates.forEach(function(template){
+                        var templateSource = template[0];
+                        var templateDestination = template[1] || template[0];
+                        dis.fs.copyTpl(
+                            dis.templatePath(templatesFolder + templateSource),
+                            dis.destinationPath(path + templatesFolder + templateDestination), {
+                                header : getFileHeader(),
+                                moduleClassName : dis.moduleClassName,
+                                module : dis.module,
+                                js_path : dis.moduleClassName.toLowerCase()
+                            }
+                        );
+                    });
+                }
+                function makeWebFiles(){
+                    var files = [
+                        ['css/custom.scss', 'css/' + dis.module.toLowerCase() + ".scss"],
+                        ['js/custom.source.js', 'js/' + dis.module.toLowerCase() + ".source.js"],
+                        ['requirejs-config.js', false]
+                    ];
+                    var webFolder = frontendDir + "web/";
+                        files.forEach(function(file){
+                        var templateSource = file[0];
+                        var templateDestination = file[1] || file[0];
+                        dis.fs.copyTpl(
+                            dis.templatePath(webFolder + templateSource),
+                            dis.destinationPath(path + webFolder + templateDestination), {
+                                header : getFileHeader(),
+                                module : dis.module,
+                                lcModule : dis.module.toLowerCase(),
+                                js_path : dis.moduleClassName.toLowerCase(),
+                                moduleClassName : dis.moduleClassName,
+                            }
+                        );
 
-            };
+                    });
+                }
 
-            /** make web folder **/
-            if(this.hasFrontendViewWeb){
-                if(!this.hasFrontendView) console.log(chalk.yellow(this.errors.NO_FRONTEND_SELECTED));
-                var folders = ['web'];
-                folders.forEach(function(folder) {
-                    mkdirp(path + "view/frontend/" + folder);
-                });
+                makeLayouts();
+                makeTemplates();
+                makeWebFiles();
             }
 			/** composer.json + README.md **/
             if(this.hasComposer){
                 if(!this.hasFrontendView) console.log(chalk.yellow(this.errors.NO_FRONTEND_SELECTED));
-                if(!this.hasFrontendViewWeb) console.log(chalk.yellow(this.errors.NO_FRONTEND_WEB_SELECTED));
 				buildTpl('composer.json',{
 					vendor : this.vendor,
 					module : this.module,
