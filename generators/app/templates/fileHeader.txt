@@ -1,5 +1,5 @@
 /**
- * @package: <%= packageName %>
+ * @package: <%= class_name %>
  <% if (author) { %>* @author: <%= author %><% } %>
  * @description: <%= description %>
  */

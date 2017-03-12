@@ -1,6 +1,6 @@
 <?php
-<%- header %>
+<%- context.header_file %>
 ?>
 <?php
 use \Magento\Framework\Component\ComponentRegistrar;
-ComponentRegistrar::register(ComponentRegistrar::MODULE, '<%= className %>', __DIR__);
+ComponentRegistrar::register(ComponentRegistrar::MODULE, '<%= context.class_name %>', __DIR__);

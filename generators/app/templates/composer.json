@@ -1,6 +1,6 @@
 {
-    "name": "<%= lcVendor %>/<%= lcModule %>",
-    "description": "<%= description %>",
+    "name": "<%= context.vendor_lc %>/<%= context.module_lc %>",
+    "description": "<%= context.description %>",
     "type": "magento2-module",
     "version": "1.0.0",
     "license": [
@@ -13,7 +13,7 @@
             "registration.php"
         ],
         "psr-4": {
-            "<%= vendor %>\\<%= module %>\\": ""
+            "<%= context.vendor %>\\<%= context.module %>\\": ""
         }
     }
 }

@@ -1,9 +1,9 @@
 <?php
-<%- header %>
+<%- context.header_file %>
 ?>
 
 <script>
-    require(['jquery','jquery/ui', '<%= js_path %>'], function() {
-        <%= module %>.init();
+    require(['jquery','jquery/ui', '<%= context.vendor_lc %>_<%= context.module_lc %>'], function() {
+        <%= context.module %>.init();
     });
 </script>

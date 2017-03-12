@@ -1,11 +1,11 @@
 <?php
-<%- header %>
+<%- context.header_file %>
 
-namespace <%= namespace %>\Block;
+namespace <%= context.namespace %>\Block;
 use Magento\Framework\View\Element\Template as Template;
 use Magento\Framework\View\Element\Template\Context as Context;
 
-class <%= blockClass %> extends Template {
+class <%= context.default_block %> extends Template {
 	/**
 	public function __construct(
         Context $context,
@@ -16,6 +16,6 @@ class <%= blockClass %> extends Template {
     }
     */
 	public function getText(){
-	    return "Just like Apache... It works!";
+	    return "Hey! It works!";
     }
 }

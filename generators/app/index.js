@@ -7,17 +7,23 @@ var shell = require('shelljs');
 var _s = require('underscore.string');
 
 module.exports = Generator.extend({
-    errors : {
-        NO_COMPONENTS : "No components selected... Failing...",
-        NO_FRONTEND_SELECTED : "You forgot to add frontend views! Continuing anyway...",
-        NO_FRONTEND_WEB_SELECTED : "You forgot to add frontend web! Continuing anyway..."
+	vars : {
+        MSG_NO_COMPONENTS : "No components selected... Failing...",
+        MSG_NO_FRONTEND_SELECTED : "You forgot to add frontend views! Continuing anyway..."
+    },
+    _die : function(data){
+        var done = this.async();
+		console.log(data);
+		done();
+		process.exit(1);
     },
     prompting: function () {
-
         var done = this.async();
-        // Have Yeoman greet the user.
-        this.author = this.user.git.name() || "Yeoman";
-        this.git_remote = shell.exec("git config --get remote.origin.url", {silent : true}).stdout.replace(/(\r\n|\n|\r)/gm,"") || false;
+        var $t = this;
+        this.context = {},
+        this.context.git_remote = shell.exec("git config --get remote.origin.url", {silent : true}).stdout.replace(/(\r\n|\n|\r)/gm,"") || false;
+        this.context.git_branch = shell.exec("git rev-parse --abbrev-ref HEAD", {silent : true}).stdout.replace(/(\r\n|\n|\r)/gm,"") || "<your_branch>";
+        this.context.author = this.user.git.name() || "Yeoman";
 
         this.log(yosay(
             'Welcome to the rad ' + chalk.red('generator-magetwo-code') + ' generator!'
@@ -42,259 +48,195 @@ module.exports = Generator.extend({
                 choices: [
                     {
                         name: "Block",
-                        value: "block"
+                        value: "block",
+                        checked : true
                     },
                     {
-                        name: "Setup",
-                        value: "setup"
+                        name: "Install and Upgrade Schema",
+                        value: "setup",
+                        checked : true
                     },
                     {
                         name: "Frontend (XML + PHTML + JS + SCSS + require.js)",
-                        value: "frontendView"
+                        value: "frontend",
+                        checked : true
                     },
                     {
                         name: "composer.json + README.md",
-                        value: "composerReady"
+                        value: "composer_readme",
+                        checked : true
                     }
                 ]
+            },
+            {
+                type: 'input',
+                name: 'author',
+                message: 'Author:',
+                default: this.context.author
             },
 			{
 				type: 'input',
 				name: 'description',
 				message: 'Module Short Description:',
-				default: "Generated with Yeoman" + (this.author.name ? "by : " + this.author.name : "")
+				default: "Generated with Yeoman by " + this.context.author
 			},
-            {
-                type: 'input',
-                name: 'author',
-                message: 'Author:',
-                default: this.author
-            },
             {
                 type: 'input',
                 name: 'remote',
                 message: 'Git remote:',
-                default: this.git_remote
+                default: this.context.git_remote || ""
             }
         ];
+        
 
         return this.prompt(prompts).then(function (props) {
-            var components = props.components;
-            this.components = props.components;
-            this.description = props.description;
-
-            this.vendor = _s.classify(props.vendor);
-            this.module = _s.classify(props.module);
-            this.remote = props.remote;
-
-			this.git_branch = shell.exec("git rev-parse --abbrev-ref HEAD", {silent : true}).stdout.replace(/(\r\n|\n|\r)/gm,"") || false;
-
-            function hasComponent(component) {
-                return components && components.indexOf(component) !== -1;
-            }
-            /* CONFIG */
-            this.hasBlock = hasComponent('block');
-            this.hasSetup = hasComponent('setup');
-            this.hasFrontendView = hasComponent('frontendView');
-            this.hasComposer = hasComponent('composerReady');
-            this.phpNamespace = this.vendor + "\\" + this.module; /*        NWT\Custom */
-            this.modulePath = this.vendor + "/" + this.module + "/"; /*     NWT/Custom/ <-- trailing slash  */
-            this.moduleClassName = this.vendor + "_" + this.module; /* NWT_Custom */
-            this.defaultBlockName = "MyBlock";
-
+			var components = props.components;
+			function hasComponent(component) {
+				return components && components.indexOf(component) !== -1;
+			}
+        	
+            this.COMPONENT_BLOCK = hasComponent('block');
+            this.COMPONENT_SETUP = hasComponent('setup');
+            this.COMPONENT_FRONTEND = hasComponent('frontend');
+            this.COMPONENT_COMPOSER_README = hasComponent('composer_readme');
+            
+        	this.context.author = props.author;
+            this.context.components = props.components;
+            this.context.description = props.description;
+            this.context.vendor = _s.classify(props.vendor);
+            this.context.module = _s.classify(props.module);
+            this.context.vendor_lc = props.vendor.toLowerCase();
+			this.context.module_lc = props.module.toLowerCase();
+            this.context.git_remote = props.remote || this.context.git_remote;
+        	this.context.namespace = this.context.vendor + "\\" + this.context.module; //=> Your\Module
+        	this.context.base_path = this.context.vendor + "/" + this.context.module + "/"; //=> Your/Module
+        	this.context.class_name = this.context.vendor + "_" + this.context.module; //=> Your_Module
+        	this.context.header_file_name = "fileHeader.txt";
+			this.context.default_block = "MyBlock";
+			this.context.default_block_lc = this.context.default_block.toLowerCase();
             done();
-
         }.bind(this));
     },
     writing: {
         structure : function(){
-            var dis = this;
-            var path = this.modulePath;
-            if(!this.components.length){
-                console.log(chalk.red(this.errors.NO_COMPONENTS));
+            var _this = this; // this' context change, man ..
+            var PATH = this.context.base_path;
+            
+            // FILE STRUCTURE
+            var module_xml_files =	['di.xml','module.xml'];
+        	var schema_files =		["InstallSchema.php","UpgradeSchema.php"];
+        	var frontend_files_regular = [
+				'layout/default.xml',
+				'layout/default_head_blocks.xml',
+				'templates/_scripts.phtml',
+				'web/requirejs-config.js'
+    		];
+    		var frontend_files_special = [
+    			['templates/custom.phtml','templates/' + this.context.default_block_lc + '.phtml'], //=> myblock.phtml
+    			['web/css/custom.scss','web/css/' + this.context.module_lc + '.scss'], //=> module.scss
+    			['web/js/custom.source.js','web/js/' + this.context.module_lc + '.source.js'], //=> module.source.js
+    		];
+            
+            // If no components are selected there's no point in continuing,,,
+            if(!this.context.components.length){
+                console.log(chalk.red(this.vars.MSG_NO_COMPONENTS));
                 process.exit(1);
                 return;
             }
-            function buildTpl(filename, parameters){
-                dis.fs.copyTpl(
-                    dis.templatePath(filename),
-                    dis.destinationPath(path + filename),
-                    parameters
+            
+            // Generate a temporary header file which we can include.
+            this.fs.copyTpl(
+                this.templatePath(this.context.header_file_name),
+                this.destinationPath(this.context.header_file_name),
+                {
+                	class_name	: this.context.class_name,
+                	author		: this.context.author,
+                	description : this.context.description
+                }
+            );
+            this.context.header_file = this.fs.read(this.destinationPath(this.context.header_file_name));
+
+            // Generate registration.php
+            this.fs.copyTpl(
+                this.templatePath('registration.php'),
+                this.destinationPath(PATH +'registration.php'),
+                {context : this.context}
+            );
+            
+            // Generate the helper
+            this.fs.copyTpl(
+                this.templatePath('Helper/Data.php'),
+                this.destinationPath(PATH +'Helper/Data.php'),
+                {context : this.context}
+            );
+            
+            // Generate the XMLs inside /etc
+            module_xml_files.forEach(function(xml){
+	            _this.fs.copyTpl(
+	                _this.templatePath('etc/' + xml),
+	                _this.destinationPath(PATH +'etc/' + xml),
+	                {context : _this.context}
+	            );
+            });
+            
+            // Generate a sample Block
+            if(this.COMPONENT_BLOCK){
+                _this.fs.copyTpl(
+                    _this.templatePath("Block/Block.php"),
+                    _this.destinationPath(PATH + "Block/"+ _this.context.default_block +".php"),
+                    {context: this.context}
                 );
             }
-			function getFileHeader(){
-				return dis.fs.read(dis.destinationPath(path + 'fileHeader.txt'));
-			}
-            mkdirp(path);
 
-			/** fileHeader.php **/
-            buildTpl("fileHeader.txt",{
-                author : this.author,
-                packageName : this.moduleClassName,
-                description : this.description
-            });
-
-            /** make registration.php **/
-            mkdirp(path + "etc/");
-            buildTpl('registration.php',{
-                header : getFileHeader(),
-                className : dis.moduleClassName
-            });
-
-            /** make helper **/
-            function makeHelper(){
-                buildTpl('Helper/Data.php',{
-                    header : getFileHeader(),
-                    phpNamespace : dis.phpNamespace
-                });
-            }
-            makeHelper();
-
-            function makeEtc(){
-                var xmls = ['di.xml','module.xml'];
-                xmls.forEach(function(xml){
-                    buildTpl('etc/' + xml,{
-                        moduleClassName : dis.moduleClassName,
-                        phpNamespace : dis.phpNamespace
-                    });
-                });
-            }
-            makeEtc();
-
-            /** make block **/
-            if(this.hasBlock){
-                mkdirp(path + "Block");
-                function makeBlock(){
-                    dis.fs.copyTpl(
-                        dis.templatePath("Block/Block.php"),
-                        dis.destinationPath(path + "Block/"+ dis.defaultBlockName +".php"),
-                        {
-                            header : getFileHeader(),
-                            blockClass : dis.defaultBlockName,
-                            namespace : dis.phpNamespace
-                        }
-                    );
-                }
-                makeBlock();
+			// Generate Install and Upgrade Schema...
+            if(this.COMPONENT_SETUP){
+	            schema_files.forEach(function(schema_file){
+		            _this.fs.copyTpl(
+		                _this.templatePath('Setup/' + schema_file),
+		                _this.destinationPath(PATH +'Setup/' + schema_file),
+		                {context : _this.context}
+		            );
+	            });
             }
 
-            /** make setup **/
-            if(this.hasSetup){
-                mkdirp(path + "Setup");
-                function makeSetup(){
-                    var files = ["InstallSchema.php","UpgradeSchema.php"];
-                    files.forEach(function(filename){
-                        buildTpl('Setup/' + filename,{
-                            header : getFileHeader(),
-                            namespace : dis.phpNamespace
-                        });
-                    });
-                }
-                makeSetup();
-            }
-
-            /** make frontend/layout and frontend/templates **/
-            if(this.hasFrontendView){
-                var dis = this;
-                var frontendDir = "view/frontend/";
-                var folders = [
-                    'layout',
-                    'templates',
-                    'web/css',
-                    'web/js',
-                ];
-                folders.forEach(function(folder){
-                    mkdirp(path + frontendDir + folder);
-                });
-                function makeLayouts(){
-                    var layouts = ['default.xml', 'default_head_blocks.xml'];
-                    var layoutsFolder = frontendDir + "layout/";
-                    layouts.forEach(function(layout){
-                        buildTpl(layoutsFolder + layout,{
-                            header : getFileHeader(),
-                            lcModule : dis.module.toLowerCase(),
-                            custom : dis.defaultBlockName.toLowerCase(),
-                            module : dis.module.toLowerCase(),
-                            moduleClassName : dis.moduleClassName,
-                            phpNamespace : dis.phpNamespace,
-                            blockName : dis.defaultBlockName
-                        });
-                    });
-                }
-                function makeTemplates(){
-                    var templates = [
-                        ['_scripts.phtml', false],
-                        ['custom.phtml', dis.defaultBlockName.toLowerCase()  + ".phtml"]
-                    ];
-                    var templatesFolder = frontendDir + "templates/";
-                    templates.forEach(function(template){
-                        var templateSource = template[0];
-                        var templateDestination = template[1] || template[0];
-                        dis.fs.copyTpl(
-                            dis.templatePath(templatesFolder + templateSource),
-                            dis.destinationPath(path + templatesFolder + templateDestination), {
-                                header : getFileHeader(),
-                                moduleClassName : dis.moduleClassName,
-                                module : dis.module,
-                                js_path : dis.moduleClassName.toLowerCase()
-                            }
-                        );
-                    });
-                }
-                function makeWebFiles(){
-                    var files = [
-                        ['css/custom.scss', 'css/' + dis.module.toLowerCase() + ".scss"],
-                        ['js/custom.source.js', 'js/' + dis.module.toLowerCase() + ".source.js"],
-                        ['requirejs-config.js', false]
-                    ];
-                    var webFolder = frontendDir + "web/";
-                        files.forEach(function(file){
-                        var templateSource = file[0];
-                        var templateDestination = file[1] || file[0];
-                        dis.fs.copyTpl(
-                            dis.templatePath(webFolder + templateSource),
-                            dis.destinationPath(path + webFolder + templateDestination), {
-                                header : getFileHeader(),
-                                module : dis.module,
-                                lcModule : dis.module.toLowerCase(),
-                                js_path : dis.moduleClassName.toLowerCase(),
-                                moduleClassName : dis.moduleClassName,
-                            }
-                        );
-
-                    });
-                }
-
-                makeLayouts();
-                makeTemplates();
-                makeWebFiles();
+			// Generate layout, templates web/css and web/js files
+            if(this.COMPONENT_FRONTEND){
+            	var FRONTEND_PATH = "view/frontend/";
+            	frontend_files_regular.forEach(function(regular){
+		            _this.fs.copyTpl(
+		                _this.templatePath(FRONTEND_PATH + regular),
+		                _this.destinationPath(PATH + FRONTEND_PATH + regular),
+		                {context : _this.context}
+		            );
+            	});
+            	frontend_files_special.forEach(function(special){
+		            _this.fs.copyTpl(
+		                _this.templatePath(FRONTEND_PATH + special[0]),
+		                _this.destinationPath(PATH + FRONTEND_PATH + special[1]),
+		                {context : _this.context}
+		            );
+            	});
             }
 			/** composer.json + README.md **/
-            if(this.hasComposer){
-                if(!this.hasFrontendView) console.log(chalk.yellow(this.errors.NO_FRONTEND_SELECTED));
-				buildTpl('composer.json',{
-					vendor : this.vendor,
-					module : this.module,
-					lcVendor : this.vendor.toLowerCase(),
-					lcModule : this.module.toLowerCase(),
-					description : this.description
-				}); 
-				if(this.remote){
-					buildTpl('README.md',{
-					    gitBranch : this.git_branch,
-						gitRemote : this.remote,
-						modulePath : this.modulePath,
-						lcVendor : this.vendor.toLowerCase(),
-						lcModule : this.module.toLowerCase()
-					});
-                }
+            if(this.COMPONENT_COMPOSER_README){
+                if(!this.COMPONENT_FRONTEND) console.log(chalk.yellow(this.vars.MSG_NO_FRONTEND_SELECTED));
+	            this.fs.copyTpl(
+	                this.templatePath('composer.json'),
+	                this.destinationPath('composer.json'),
+	                {context : this.context}
+	            );
+	            if(this.context.git_remote){
+		            this.fs.copyTpl(
+		                this.templatePath('README.md'),
+		                this.destinationPath('README.md'),
+		                {context : this.context}
+		            );
+	            }
             }
-
             /** delete fileHeader **/
-            this.fs.delete(dis.destinationPath(path + 'fileHeader.txt'));
+            this.fs.delete(this.destinationPath('fileHeader.txt'));
         }
     },
-
     install: function () {
         this.installDependencies();
     }

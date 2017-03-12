@@ -1,5 +1,7 @@
 <?php
-namespace <%= namespace %>\Setup;
+<%- context.header_file %>
+
+namespace <%= context.namespace %>\Setup;
 
 use Magento\Framework\Setup\UpgradeSchemaInterface;
 use Magento\Framework\Setup\SchemaSetupInterface;

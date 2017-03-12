@@ -1,9 +1,9 @@
 var config = {
     paths: {
-        '<%= js_path %>' : '<%= moduleClassName %>/js/<%= lcModule %>.js'
+        '<%= context.vendor_lc %>_<%= context.module_lc %>' : '<%= context.class_name %>/js/<%= context.module_lc %>.js'
     },
     shim : {
-        '<%= js_path %>' : {
+        '<%= context.vendor_lc %>_<%= context.module_lc %>' : {
             deps : ['jquery']
         }
     }

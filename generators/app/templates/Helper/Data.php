@@ -1,7 +1,7 @@
 <?php
-<%- header %>
+<%- context.header_file %>
 
-namespace <%= phpNamespace %>\Helper;
+namespace <%= context.namespace %>\Helper;
 use \Magento\Framework\App\Helper\AbstractHelper;
 
 class Data extends AbstractHelper {
