@@ -3,6 +3,7 @@
 This generator creates a simple simple barebone Magento2 module.
 ![CLI](cli.png)
 ![TREE](tree.png)
+
 ## Installation
 
 First, install [Yeoman](http://yeoman.io) and generator-magetwo-code using [npm](https://www.npmjs.com/) (we assume you have pre-installed [node.js](https://nodejs.org/)).
