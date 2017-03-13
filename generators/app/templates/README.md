@@ -18,6 +18,9 @@
 ### Edit modules installed with composer ###
 
 `cd vendor/<%= context.vendor_lc %>/<%= context.module_lc %>`
+
 Your HEAD will be detached so checkout to `<%= context.git_branch %>`
+
 `git checkout <%= context.git_branch %>`
+
 Make your changes, update `composer.json` with the new version and then follow the "Updating the code" section above.
