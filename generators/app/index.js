@@ -115,9 +115,8 @@ module.exports = Generator.extend({
     },
     writing: {
         structure: function() {
-            var _this = this; // this' context change, man ..
-            var PATH = this.context.base_path;
-
+            var _this = this;
+            var PATH = this.context.git_remote ? "" : this.context.base_path;
             // FILE STRUCTURE
             var module_xml_files = ['di.xml', 'module.xml'];
             var schema_files = ["InstallSchema.php", "UpgradeSchema.php"];
@@ -222,13 +221,14 @@ module.exports = Generator.extend({
             /** composer.json + README.md **/
             if (this.COMPONENT_COMPOSER_README) {
                 if (!this.COMPONENT_FRONTEND) console.log(chalk.yellow(this.vars.MSG_NO_FRONTEND_SELECTED));
-                this.fs.copyTpl(
-                    this.templatePath('composer.json'),
-                    this.destinationPath('composer.json'), {
-                        context: this.context
-                    }
-                );
                 if (this.context.git_remote) {
+                    // don't really need composer.json and the readme on how to install via composer if there's no git remote for the project...
+                    this.fs.copyTpl(
+                        this.templatePath('composer.json'),
+                        this.destinationPath('composer.json'), {
+                            context: this.context
+                        }
+                    );
                     this.fs.copyTpl(
                         this.templatePath('README.md'),
                         this.destinationPath('README.md'), {
