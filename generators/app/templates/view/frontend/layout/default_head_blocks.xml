@@ -6,6 +6,6 @@
     <head>
         <!--<link src="//fonts.googleapis.com/css?family=Lora:400,700|Poppins:400,600,700" src_type="url" rel="stylesheet" />-->x
          <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0, user-scalable=no"/>
-         <css src="css/<%= context.module_lc %>.css" media="screen and (min-width: 200px)" />
+         <css src="<%= context.class_name %>::css/<%= context.module_lc %>.css" media="screen and (min-width: 200px)" />
     </head>
 </page>
