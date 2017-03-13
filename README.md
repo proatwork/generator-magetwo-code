@@ -1,6 +1,12 @@
 # generator-magetwo-code [![NPM version][npm-image]][npm-url] [![Build Status][travis-image]][travis-url] [![Dependency Status][daviddm-image]][daviddm-url]
 ## What it does
-This generator creates a simple simple barebone Magento2 module.
+This generator creates a simple, frontend oriented, barebone Magento2 module
+
+#### Headsup!
+I made the generator with CodeKit in mind, so
+- `.scss` should be compiled to `.css`
+- `example.source.js` should be compiled/compressed to `example.js` (or whatever name you like)
+
 ![CLI](cli.png)
 ![TREE](tree.png)
 
@@ -24,9 +30,12 @@ yo
 ```
 and select `Magetwo Code`
 
+## Updating
+You can update by running `yo` and then selecting `Update your generators`
+
 ## TODO
 * Add widget support
-* Add support for system config menus
+* Add support for creating system config menus
 
 
 ## Getting To Know Yeoman
