@@ -1,22 +1,22 @@
 # README #
 
-### Get started developing ###
+## Start developing ##
 `git clone <%= context.git_remote %>` into `app/code/<%= context.vendor %>/`
 
-#### Updating the code ####
+## Install with composer ##
+
+`composer config repositories.<%= context.vendor_lc %><%= context.module_lc %> vcs <%= context.git_remote %>`
+
+`composer require --prefer-source '<%= context.vendor_lc %>/<%= context.module_lc %>:*'`
+
+## Updating the code ##
 `git commit -m "Version bump to X.X.X"`
 `git tag X.X.X`
 `git push origin <%= context.branch %> --tags`
 - Your tag should be the same as your `composer.json` version.
 - You can find current tagged version in **Commits**
 
-### Install with composer ###
-
-`composer config repositories.<%= context.vendor_lc %><%= context.module_lc %> vcs <%= context.git_remote %>`
-
-`composer require --prefer-source '<%= context.vendor_lc %>/<%= context.module_lc %>:*'`
-
-### Edit modules installed with composer ###
+## Edit composer installed modules ##
 
 `cd vendor/<%= context.vendor_lc %>/<%= context.module_lc %>`
 
