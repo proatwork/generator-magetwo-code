@@ -13,6 +13,7 @@
 ### Install with composer ###
 
 `composer config repositories.<%= context.vendor_lc %><%= context.module_lc %> vcs <%= context.git_remote %>`
+
 `composer require --prefer-source '<%= context.vendor_lc %>/<%= context.module_lc %>:*'`
 
 ### Edit modules installed with composer ###
