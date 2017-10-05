@@ -14,7 +14,7 @@ module.exports = Generator.extend({
         var done = this.async();
         this.context = {},
         this.context.git_remote = shell.exec("git config --get remote.origin.url", {silent: true}).stdout.replace(/(\r\n|\n|\r)/gm, "") || false;
-        var git_branch = shell.exec("git rev-parse --abbrev-ref HEAD", {silent: true}).stdout.replace(/(\r\n|\n|\r)/gm, "");
+        var git_branch = "master";
         this.context.git_branch = ( (git_branch == "HEAD") || (git_branch.length < 1) ) ? "master" : git_branch;
         this.context.author = this.user.git.name() || "Yeoman";
 
