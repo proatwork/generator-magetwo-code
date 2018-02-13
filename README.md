@@ -2,12 +2,9 @@
 ## What it does
 This generator creates a simple, frontend oriented, barebone Magento2 module
 
-#### If you are starting a new module and want to add it as a composer dependency
-- Make sure to add the git remote when prompted (it generates the files directly in that directory without creating the `Vendor/Module` folders.)
-- Create the module structure in app/code as so `mkdir -p Vendor/Module/`.
-- `cd` into `Vendor/Module`,  `git init` and `git remote add origin ...`
-- Run `yo` or `yo magetwo-code`
+**Navigate into app/code/ and run `yo magetwo-code` or `yo`**
 
+:warning: If you add a remote URL when you are prompted, the generator will automatically init a new repo inside your module.
 
 #### Headsup!
 

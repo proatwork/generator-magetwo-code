@@ -13,9 +13,6 @@ module.exports = Generator.extend({
     prompting: function() {
         var done = this.async();
         this.context = {},
-        this.context.git_remote = shell.exec("git config --get remote.origin.url", {silent: true}).stdout.replace(/(\r\n|\n|\r)/gm, "") || false;
-        var git_branch = shell.exec("git rev-parse --abbrev-ref HEAD", {silent: true}).stdout.replace(/(\r\n|\n|\r)/gm, "");
-        this.context.git_branch = ( (git_branch == "HEAD") || (git_branch.length < 1) ) ? "master" : git_branch;
         this.context.author = this.user.git.name() || "Yeoman";
 
         this.log(chalk.green('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'));
@@ -25,7 +22,7 @@ module.exports = Generator.extend({
                 type: 'input',
                 name: 'vendor',
                 message: 'Vendor:',
-                default: "NWT"
+                default: "Vendor"
             },
             {
                 type: 'input',
@@ -112,7 +109,7 @@ module.exports = Generator.extend({
     writing: {
         structure: function() {
             var _this = this;
-            var PATH = this.context.git_remote ? "" : this.context.base_path;
+            var PATH = this.context.base_path;
             // FILE STRUCTURE
             var module_xml_files = ['di.xml', 'module.xml'];
             var schema_files = ["InstallSchema.php", "UpgradeSchema.php"];
@@ -221,17 +218,22 @@ module.exports = Generator.extend({
                     // don't really need composer.json and the readme on how to install via composer if there's no git remote for the project...
                     this.fs.copyTpl(
                         this.templatePath('composer.json'),
-                        this.destinationPath('composer.json'), {
+                        this.destinationPath(PATH + 'composer.json'), {
                             context: this.context
                         }
                     );
                     this.fs.copyTpl(
                         this.templatePath('README.md'),
-                        this.destinationPath('README.md'), {
+                        this.destinationPath(PATH + 'README.md'), {
                             context: this.context
                         }
                     );
+
                 }
+            }
+            if(this.context.git_remote){
+                shell.exec("git init " + PATH);
+                shell.exec("cd " + PATH + " && git remote add origin " + this.context.git_remote);
             }
             /** delete fileHeader **/
             this.fs.delete(this.destinationPath('fileHeader.txt'));
