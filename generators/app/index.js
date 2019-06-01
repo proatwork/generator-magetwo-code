@@ -117,7 +117,7 @@ module.exports = Generator.extend({
                 'layout/default.xml',
                 'layout/default_head_blocks.xml',
                 'templates/_scripts.phtml',
-                'web/requirejs-config.js'
+                'requirejs-config.js'
             ];
             var frontend_files_special = [
                 ['templates/custom.phtml', 'templates/' + this.context.default_block_lc + '.phtml'], //=> myblock.phtml

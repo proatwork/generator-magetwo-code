@@ -1,6 +1,6 @@
 {
   "name": "generator-magetwo-code",
-  "version": "1.2.3",
+  "version": "1.2.4",
   "description": "Magento2 lightweight module skeleton creator",
   "main": "generators/app/index.js",
   "dependencies": {
